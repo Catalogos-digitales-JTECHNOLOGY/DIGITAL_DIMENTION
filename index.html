@@ -823,20 +823,20 @@ footer{
         <div class="form-row">
           <div class="form-group">
             <label>Nombre completo</label>
-            <input type="text" placeholder="Tu nombre">
+            <input id="dd-nombre" type="text" placeholder="Tu nombre">
           </div>
           <div class="form-group">
             <label>Teléfono / WhatsApp</label>
-            <input type="tel" placeholder="+52 222 000 0000">
+            <input id="dd-telefono" type="tel" placeholder="+52 222 000 0000">
           </div>
         </div>
         <div class="form-group">
           <label>Correo electrónico</label>
-          <input type="email" placeholder="tucorreo@empresa.com">
+          <input id="dd-correo" type="email" placeholder="tucorreo@empresa.com">
         </div>
         <div class="form-group">
           <label>Servicio de interés</label>
-          <select>
+          <select id="dd-servicio">
             <option value="">Selecciona un servicio…</option>
             <option>Sitio web / Catálogo digital</option>
             <option>Infraestructura de red</option>
@@ -846,9 +846,10 @@ footer{
         </div>
         <div class="form-group">
           <label>Describe tu proyecto</label>
-          <textarea rows="4" placeholder="Cuéntanos brevemente qué necesitas…"></textarea>
+          <textarea id="dd-proyecto" rows="4" placeholder="Cuéntanos brevemente qué necesitas…"></textarea>
         </div>
-        <button class="form-submit" onclick="alert('¡Gracias! Nos comunicaremos contigo pronto.')">Enviar Solicitud →</button>
+        <button class="form-submit" id="dd-btn-enviar" onclick="ddEnviarFormulario()">Enviar Solicitud →</button>
+        <p id="dd-msg" style="text-align:center;font-size:.9rem;min-height:1.4em;margin-top:.3rem"></p>
       </div>
     </div>
   </div>
@@ -935,6 +936,62 @@ window.addEventListener('scroll',()=>{
   const nav=document.querySelector('nav');
   nav.style.background=window.scrollY>60?'rgba(11,15,30,0.97)':'rgba(11,15,30,0.85)';
 });
+
+// ===== FORMULARIO SHEETDB =====
+async function ddEnviarFormulario(){
+  const nombre   = document.getElementById('dd-nombre').value.trim();
+  const telefono = document.getElementById('dd-telefono').value.trim();
+  const correo   = document.getElementById('dd-correo').value.trim();
+  const servicio = document.getElementById('dd-servicio').value.trim();
+  const proyecto = document.getElementById('dd-proyecto').value.trim();
+  const msg      = document.getElementById('dd-msg');
+  const btn      = document.getElementById('dd-btn-enviar');
+
+  if(!nombre || !telefono || !correo || !servicio || !proyecto){
+    msg.style.color='#ff6b6b';
+    msg.textContent='Por favor completa todos los campos antes de enviar.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando\u2026';
+  msg.style.color = 'var(--muted)';
+  msg.textContent = '';
+
+  const ahora = new Date();
+  const fecha = ahora.toLocaleString('es-MX',{
+    year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',hour12:false
+  });
+
+  try {
+    const resp = await fetch('https://sheetdb.io/api/v1/km43dvj534708?sheet=Hoja%2', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        data: [{ nombre, telefono, correo, servicio, proyecto, fecha }]
+      })
+    });
+
+    if(resp.ok){
+      msg.style.color = '#4ade80';
+      msg.textContent = '\u2713 \u00a1Solicitud enviada! Nos contactaremos contigo en menos de 24 horas.';
+      ['dd-nombre','dd-telefono','dd-correo','dd-servicio','dd-proyecto'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el.tagName==='SELECT') el.selectedIndex=0;
+        else el.value='';
+      });
+    } else {
+      throw new Error('Error en la respuesta del servidor');
+    }
+  } catch(e){
+    msg.style.color = '#ff6b6b';
+    msg.textContent = 'Ocurri\u00f3 un error al enviar. Por favor intenta de nuevo.';
+  }
+
+  btn.textContent = 'Enviar Solicitud \u2192';
+  btn.disabled = false;
+}
 </script>
 </body>
 </html>
