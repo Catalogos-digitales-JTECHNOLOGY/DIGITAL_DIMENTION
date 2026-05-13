@@ -965,15 +965,21 @@ async function ddEnviarFormulario(){
   });
 
   try {
-    const resp = await fetch('https://sheetdb.io/api/v1/km43dvj534708?sheet=Hoja%2', {
+    const resp = await fetch('https://sheetdb.io/api/v1/km43dvj534708?sheet=Hoja%202', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({
         data: [{ nombre, telefono, correo, servicio, proyecto, fecha }]
       })
     });
 
-    if(resp.ok){
+    let resultado;
+    try { resultado = await resp.json(); } catch(_){ resultado = {}; }
+
+    if(resp.ok && (resultado.created >= 1 || resp.status === 201 || resp.status === 200)){
       msg.style.color = '#4ade80';
       msg.textContent = '\u2713 \u00a1Solicitud enviada! Nos contactaremos contigo en menos de 24 horas.';
       ['dd-nombre','dd-telefono','dd-correo','dd-servicio','dd-proyecto'].forEach(id=>{
@@ -982,11 +988,13 @@ async function ddEnviarFormulario(){
         else el.value='';
       });
     } else {
-      throw new Error('Error en la respuesta del servidor');
+      const detalle = resultado.error || resultado.message || ('HTTP ' + resp.status);
+      throw new Error(detalle);
     }
   } catch(e){
     msg.style.color = '#ff6b6b';
-    msg.textContent = 'Ocurri\u00f3 un error al enviar. Por favor intenta de nuevo.';
+    msg.textContent = 'Error al enviar: ' + e.message + '. Verifica que los encabezados existan en Hoja2.';
+    console.error('[SheetDB]', e);
   }
 
   btn.textContent = 'Enviar Solicitud \u2192';
